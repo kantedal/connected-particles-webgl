@@ -1,0 +1,1 @@
+Experiment with creating a neural network using compute shaders in WebGL2
