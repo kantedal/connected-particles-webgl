@@ -1,8 +1,8 @@
-import DataTexture from './render-utils/data-texture'
-import createProgram from './render-utils/create-program'
-import createShader from './render-utils/create-shader'
-import { gl } from './render-utils/render-context'
-import Shader, { IUniform, IUniforms, UniformTypes } from './render-utils/shader'
+import DataTexture from '../utils/data-texture'
+import createProgram from '../utils/create-program'
+import createShader from '../utils/create-shader'
+import { gl } from '../utils/render-context'
+import Shader, { IUniform, IUniforms, UniformTypes } from '../utils/shader'
 
 // language=GLSL
 const vertexShaderLinesSrc = `#version 300 es
@@ -25,7 +25,7 @@ const vertexShaderLinesSrc = `#version 300 es
     vec3 pairPosition = texture(pointPositions, a_inversedTextureCoords).xyz;
     float distanceToPair = squaredDistance2d(position.xy, pairPosition.xy);
 
-    lineAlpha = max(0.05 - distanceToPair, 0.0) * 1.0;
+    lineAlpha = max(0.05 - distanceToPair, 0.0);
 
     gl_Position = vec4(position, 1.0);
   }
@@ -43,7 +43,7 @@ const fragmentShaderLinesSrc = `#version 300 es
       discard;
     }
 
-    outColor = vec4(0.0, 0.0, 0.0, lineAlpha);
+    outColor = vec4(0.0, 0.0, 0.0, lineAlpha * 1.5);
   }
 `
 
@@ -102,9 +102,6 @@ export default class LineNetwork {
   }
 
   public render(pointPositions: WebGLTexture) {
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    gl.clearColor(1.0, 1.0, 1.0, 1.0)
-
     gl.useProgram(this._shaderProgramLines)
 
     this._linesShader.setUniform('pointPositions', { type: UniformTypes.Texture2d, value: pointPositions })
@@ -121,7 +118,7 @@ export default class LineNetwork {
     gl.vertexAttribPointer(inversedLineCoords, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(inversedLineCoords)
 
-    gl.enable(gl.DEPTH_TEST)
+    // gl.enable(gl.DEPTH_TEST)
     gl.viewport(0, 0, window.innerWidth, window.innerHeight)
     gl.drawArrays(gl.LINES, 0, this._lineCount)
   }

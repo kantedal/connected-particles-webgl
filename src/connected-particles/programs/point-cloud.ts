@@ -1,8 +1,8 @@
-import DataTexture from './render-utils/data-texture'
-import createProgram from './render-utils/create-program'
-import createShader from './render-utils/create-shader'
-import { gl } from './render-utils/render-context'
-import Shader, { IUniform, IUniforms, UniformTypes } from './render-utils/shader'
+import DataTexture from '../utils/data-texture'
+import createProgram from '../utils/create-program'
+import createShader from '../utils/create-shader'
+import { gl } from '../utils/render-context'
+import Shader, { IUniform, IUniforms, UniformTypes } from '../utils/shader'
 
 // language=GLSL
 const vertexShaderPointsSrc = `#version 300 es
@@ -13,7 +13,7 @@ const vertexShaderPointsSrc = `#version 300 es
   void main() {
     vec3 pos = texture(pointPositions, a_textureCoords).xyz;
     gl_Position = vec4(pos, 1.0);
-    gl_PointSize = 3.0;
+    gl_PointSize = 5.0;
   }
 `
 
@@ -32,7 +32,7 @@ const fragmentShaderPointsSrc = `#version 300 es
     delta = fwidth(r);
     alpha = 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r);
 
-    outColor = vec4(gl_PointCoord, 0.0, 1.0) * alpha;
+    outColor = vec4(1.0, 1.0, 1.0, 0.1) * alpha;
   }
 `
 
@@ -57,8 +57,7 @@ export default class PointCloud {
     const pointTextureCoords: number[] = []
     for (let x = 0; x < 8; x++) {
       for (let y = 0; y < 8; y++) {
-        pointTextureCoords.push(x / 8.0)
-        pointTextureCoords.push(y / 8.0)
+        pointTextureCoords.push(x / 8.0), pointTextureCoords.push(y / 8.0)
       }
     }
     this._pointTextureCoords = new Float32Array(pointTextureCoords)
@@ -66,7 +65,6 @@ export default class PointCloud {
   }
 
   public render(pointPositions: WebGLTexture) {
-    // Points
     gl.useProgram(this._shaderProgramPoints)
 
     this._pointsShaderUniforms.pointPositions.value = pointPositions
@@ -77,7 +75,7 @@ export default class PointCloud {
     gl.vertexAttribPointer(textureCoordsPoints, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(textureCoordsPoints)
 
-    gl.enable(gl.DEPTH_TEST)
+    // gl.enable(gl.DEPTH_TEST)
     gl.viewport(0, 0, window.innerWidth, window.innerHeight)
     gl.drawArrays(gl.POINTS, 0, this._numPoints)
   }

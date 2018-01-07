@@ -1,8 +1,9 @@
-import { initRenderContext } from './rendering/render-utils/render-context'
-import * as React from 'react'
 import './App.css'
-import Renderer from './rendering/renderer'
-import createFloatArrayFromSet from './rendering/utils/create-floatarray-from-set'
+
+import * as React from 'react'
+
+import ConnectedParticles from './connected-particles'
+import { initRenderContext } from './connected-particles/utils/render-context'
 
 const logo = require('./logo.svg')
 
@@ -18,7 +19,7 @@ class App extends React.Component {
 
   componentDidMount() {
    initGpuContext()
-   const renderer = new Renderer()
+   const connectedParticles = new ConnectedParticles()
   }
 }
 

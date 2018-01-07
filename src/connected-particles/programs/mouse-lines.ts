@@ -1,8 +1,8 @@
-import DataTexture from './render-utils/data-texture'
-import createProgram from './render-utils/create-program'
-import createShader from './render-utils/create-shader'
-import { gl } from './render-utils/render-context'
-import Shader, { IUniform, IUniforms, UniformTypes } from './render-utils/shader'
+import DataTexture from '../utils/data-texture'
+import createProgram from '../utils/create-program'
+import createShader from '../utils/create-shader'
+import { gl } from '../utils/render-context'
+import Shader, { IUniform, IUniforms, UniformTypes } from '../utils/shader'
 
 // language=GLSL
 const vertexShaderLinesSrc = `#version 300 es
@@ -23,7 +23,7 @@ const vertexShaderLinesSrc = `#version 300 es
   void main() {
     vec3 position = texture(pointPositions, a_textureCoords).xyz;
     float distanceToPair = squaredDistance2d(position.xy, mousePosition);
-    lineAlpha = max(0.15 - distanceToPair, 0.0) * 1.0;
+    lineAlpha = max(0.1 - distanceToPair, 0.0) * 1.0;
 
     float currentId = a_pointId.x;
     if (currentId == 1.0) {
@@ -49,7 +49,7 @@ const fragmentShaderLinesSrc = `#version 300 es
       discard;
     }
 
-    outColor = vec4(0.0, 0.0, 0.0, lineAlpha);
+    outColor = vec4(0.0, 0.0, 0.0, lineAlpha * 1.5);
   }
 `
 
@@ -119,7 +119,6 @@ export default class MouseLines {
     gl.vertexAttribPointer(pointIdLocation, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(pointIdLocation)
 
-    gl.enable(gl.DEPTH_TEST)
     gl.viewport(0, 0, window.innerWidth, window.innerHeight)
     gl.drawArrays(gl.LINES, 0, this._numPoints * 2)
   }

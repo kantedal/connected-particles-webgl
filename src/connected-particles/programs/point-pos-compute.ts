@@ -1,7 +1,7 @@
-import { IUniforms, UniformTypes } from './render-utils/shader'
-import PingPongComputeShader from './render-utils/pingpong-compute-shader'
-import ComputeShader from './render-utils/compute-shader'
-import DataTexture from './render-utils/data-texture'
+import { IUniforms, UniformTypes } from '../utils/shader'
+import PingPongComputeShader from '../utils/pingpong-compute-shader'
+import ComputeShader from '../utils/compute-shader'
+import DataTexture from '../utils/data-texture'
 
 // language=GLSL
 const pointPosComputeShader = `#version 300 es

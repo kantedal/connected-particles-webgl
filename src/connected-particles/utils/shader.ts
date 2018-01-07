@@ -98,9 +98,6 @@ export default class Shader {
         if (name) {
           const uniform = this._uniforms[name] as IUniform
           uniform.location = gl.getUniformLocation(this._program, name) as WebGLUniformLocation
-          // if (name === 'mousePosition') {
-          //   console.log(name, uniform.location)
-          // }
         }
       }
     }
@@ -108,7 +105,6 @@ export default class Shader {
 
   set uniforms(value: {[p: string]: IUniform}) {
     this._uniforms = value
-    console.log(this._uniforms)
     this.updateUniforms()
   }
 
