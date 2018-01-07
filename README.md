@@ -1,1 +1,1 @@
-Experiment with creating a neural network using compute shaders in WebGL2
+WebGL2 experiment similar to particles.js

@@ -59,9 +59,13 @@ export default class MouseLines {
   private _linesShaderUniforms: IUniforms  
   private _shaderProgramLines: WebGLProgram
 
+  // Buffers
+  private _texCoordsBuffer: WebGLBuffer | null
+  private _pointIdBuffer: WebGLBuffer | null
+
   // Point and line data
-  private _lineTextureCoords: number[] = []
-  private _pointId: number[] = []
+  private _lineTextureCoords: Float32Array
+  private _pointId: Float32Array
   private _mousePosition: number[] = [0, 0]
 
   constructor() {
@@ -73,20 +77,27 @@ export default class MouseLines {
     this._linesShader.uniforms = this._linesShaderUniforms
     this._shaderProgramLines = createProgram(gl, this._linesShader) 
     
+    const lineTextureCoords: number[] = []
+    const pointId: number[] = []
     for (let x = 0; x < Math.sqrt(this._numPoints); x++) {
       for (let y = 0; y < Math.sqrt(this._numPoints); y++) {
-        this._lineTextureCoords.push(x / 8.0), this._lineTextureCoords.push(y / 8.0)
-        this._lineTextureCoords.push(x / 8.0), this._lineTextureCoords.push(y / 8.0)
+        lineTextureCoords.push(x / 8.0), lineTextureCoords.push(y / 8.0)
+        lineTextureCoords.push(x / 8.0), lineTextureCoords.push(y / 8.0)
         
-        this._pointId.push(1), this._pointId.push(0)
-        this._pointId.push(0), this._pointId.push(0)
+        pointId.push(1), pointId.push(0)
+        pointId.push(0), pointId.push(0)
       }
     }
+    this._lineTextureCoords = new Float32Array(lineTextureCoords)
+    this._pointId = new Float32Array(pointId)
 
     document.onmousemove = (e) => {
       this._mousePosition[0] = 2.0 * (e.clientX / window.innerWidth - 0.5)
       this._mousePosition[1] = -2.0 * (e.clientY / window.innerHeight - 0.5)
     }
+
+    this._texCoordsBuffer = gl.createBuffer()
+    this._pointIdBuffer = gl.createBuffer()
   }
 
   public render(pointPositions: WebGLTexture) {
@@ -96,16 +107,14 @@ export default class MouseLines {
     this._linesShaderUniforms.mousePosition.value = this._mousePosition
     this._linesShader.update()
 
-    const texCoordsBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._lineTextureCoords), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._texCoordsBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this._lineTextureCoords, gl.STATIC_DRAW)
     const lineCoords = gl.getAttribLocation(this._shaderProgramLines, 'a_textureCoords')
     gl.vertexAttribPointer(lineCoords, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(lineCoords)
 
-    const pointIdBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointIdBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._pointId), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._pointIdBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this._pointId, gl.STATIC_DRAW)
     const pointIdLocation = gl.getAttribLocation(this._shaderProgramLines, 'a_pointId')
     gl.vertexAttribPointer(pointIdLocation, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(pointIdLocation)

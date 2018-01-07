@@ -53,12 +53,14 @@ export default class LineNetwork {
   private _linesShaderUniforms: IUniforms  
   private _shaderProgramLines: WebGLProgram
 
+  // Buffers
+  private _texCoordsBuffer: WebGLBuffer | null
+  private _pairTexCoordsBuffer: WebGLBuffer | null
+
   // Point and line data
-  private _pointTextureCoords: number[] = []
-  private _lineTextureCoords: number[] = []
-  private _inversedLineTextureCoords: number[] = []
-  private _lines: number[] = []
-  private _lineLengths: number[] = []
+  private _lineTextureCoords: Float32Array
+  private _pairLineTextureCoords: Float32Array
+  private _lineCount: number = 0
 
   constructor() {
     this._linesShader = new Shader(vertexShaderLinesSrc, fragmentShaderLinesSrc)
@@ -70,29 +72,33 @@ export default class LineNetwork {
     
     for (let i = 0; i < this._numPoints * 3; i += 3) {
       for (let j = i + 3; j < this._numPoints * 3; j += 3) {
-        this._lines.push(0), this._lines.push(0), this._lines.push(0)
-        this._lines.push(0), this._lines.push(0), this._lines.push(0)
+        this._lineCount += 2
       }
     }
 
-    for (let x = 0; x < 8; x++) {
-      for (let y = 0; y < 8; y++) {
-        this._pointTextureCoords.push(x / 8.0)
-        this._pointTextureCoords.push(y / 8.0)
+    const texCoords: number[] = []
+    for (let x = 0; x < Math.sqrt(this._numPoints); x++) {
+      for (let y = 0; y < Math.sqrt(this._numPoints); y++) {
+        texCoords.push(x / Math.sqrt(this._numPoints)), texCoords.push(y / Math.sqrt(this._numPoints))
       }
     }
 
-    for (let i = 0; i < this._pointTextureCoords.length; i += 2) {
-      for (let j = i + 2; j < this._pointTextureCoords.length; j += 2) {
-        this._lineTextureCoords.push(this._pointTextureCoords[i + 0]), this._lineTextureCoords.push(this._pointTextureCoords[i + 1])
-        this._lineTextureCoords.push(this._pointTextureCoords[j + 0]), this._lineTextureCoords.push(this._pointTextureCoords[j + 1])
+    const lineTextureCoords: number[] = []
+    const pairLineTextureCoords: number[] = []
+    for (let i = 0; i < texCoords.length; i += 2) {
+      for (let j = i + 2; j < texCoords.length; j += 2) {
+        lineTextureCoords.push(texCoords[i + 0]), lineTextureCoords.push(texCoords[i + 1])
+        lineTextureCoords.push(texCoords[j + 0]), lineTextureCoords.push(texCoords[j + 1])
         
-        this._inversedLineTextureCoords.push(this._pointTextureCoords[j + 0]), this._inversedLineTextureCoords.push(this._pointTextureCoords[j + 1])
-        this._inversedLineTextureCoords.push(this._pointTextureCoords[i + 0]), this._inversedLineTextureCoords.push(this._pointTextureCoords[i + 1])
+        pairLineTextureCoords.push(texCoords[j + 0]), pairLineTextureCoords.push(texCoords[j + 1])
+        pairLineTextureCoords.push(texCoords[i + 0]), pairLineTextureCoords.push(texCoords[i + 1])
       }
     }
+    this._lineTextureCoords = new Float32Array(lineTextureCoords)
+    this._pairLineTextureCoords = new Float32Array(pairLineTextureCoords)
 
-    console.log(this._lineTextureCoords.length, this._lines.length)
+    this._texCoordsBuffer = gl.createBuffer()
+    this._pairTexCoordsBuffer = gl.createBuffer()
   }
 
   public render(pointPositions: WebGLTexture) {
@@ -103,22 +109,20 @@ export default class LineNetwork {
 
     this._linesShader.setUniform('pointPositions', { type: UniformTypes.Texture2d, value: pointPositions })
 
-    const texCoordsBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordsBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._lineTextureCoords), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._texCoordsBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this._lineTextureCoords, gl.STATIC_DRAW)
     const lineCoords = gl.getAttribLocation(this._shaderProgramLines, 'a_textureCoords')
     gl.vertexAttribPointer(lineCoords, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(lineCoords)
 
-    const inversedTexCoordsBuffer = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, inversedTexCoordsBuffer)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._inversedLineTextureCoords), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._pairTexCoordsBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this._pairLineTextureCoords, gl.STATIC_DRAW)
     const inversedLineCoords = gl.getAttribLocation(this._shaderProgramLines, 'a_inversedTextureCoords')
     gl.vertexAttribPointer(inversedLineCoords, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(inversedLineCoords)
 
     gl.enable(gl.DEPTH_TEST)
     gl.viewport(0, 0, window.innerWidth, window.innerHeight)
-    gl.drawArrays(gl.LINES, 0, this._lines.length / 3)
+    gl.drawArrays(gl.LINES, 0, this._lineCount)
   }
 }

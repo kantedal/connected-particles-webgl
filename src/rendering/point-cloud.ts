@@ -43,16 +43,10 @@ export default class PointCloud {
   private _shaderProgramPoints: WebGLProgram
 
   // Point and line data
-  private _points: number[] = []
-  private _pointTextureCoords: number[] = []
+  private _pointTextureCoords: Float32Array
+  private _pointTextureCoordsBuffer: WebGLBuffer | null
 
   constructor() {
-    for (let i = 0; i < this._numPoints; i++) {
-      this._points.push(Math.random() * 2.0 - 1.0)
-      this._points.push(Math.random() * 2.0 - 1.0)
-      this._points.push(Math.random() * 2.0 - 1.0)
-    }
-
     this._pointsShader = new Shader(vertexShaderPointsSrc, fragmentShaderPointsSrc)
     this._pointsShaderUniforms = {
       pointPositions: { type: UniformTypes.Texture2d, value: null },
@@ -60,26 +54,25 @@ export default class PointCloud {
     this._pointsShader.uniforms = this._pointsShaderUniforms
     this._shaderProgramPoints = createProgram(gl, this._pointsShader)
 
+    const pointTextureCoords: number[] = []
     for (let x = 0; x < 8; x++) {
       for (let y = 0; y < 8; y++) {
-        this._pointTextureCoords.push(x / 8.0)
-        this._pointTextureCoords.push(y / 8.0)
+        pointTextureCoords.push(x / 8.0)
+        pointTextureCoords.push(y / 8.0)
       }
     }
+    this._pointTextureCoords = new Float32Array(pointTextureCoords)
+    this._pointTextureCoordsBuffer = gl.createBuffer()
   }
 
   public render(pointPositions: WebGLTexture) {
     // Points
     gl.useProgram(this._shaderProgramPoints)
 
-    this._pointsShader.setUniform('pointPositions', {
-      type: UniformTypes.Texture2d,
-      value: pointPositions
-    })
+    this._pointsShaderUniforms.pointPositions.value = pointPositions
 
-    const vertexBufferTexCoords = gl.createBuffer()
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBufferTexCoords)
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this._pointTextureCoords), gl.STATIC_DRAW)
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._pointTextureCoordsBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this._pointTextureCoords, gl.STATIC_DRAW)
     const textureCoordsPoints = gl.getAttribLocation(this._shaderProgramPoints, 'a_textureCoords')
     gl.vertexAttribPointer(textureCoordsPoints, 2, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(textureCoordsPoints)
