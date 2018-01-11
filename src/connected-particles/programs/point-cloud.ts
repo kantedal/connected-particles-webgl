@@ -8,13 +8,19 @@ import Shader, { IUniform, IUniforms, UniformTypes } from '../utils/shader'
 const vertexShaderPointsSrc = `#version 300 es
   in vec2 a_textureCoords;
   in float a_pointSize;
+  in vec3 a_randomParameters;
 
   uniform sampler2D pointPositions;
+  uniform float time;
 
   void main() {
     vec3 pos = texture(pointPositions, a_textureCoords).xyz;
     gl_Position = vec4(pos, 1.0);
-    gl_PointSize = a_pointSize;
+    
+    float sizeDelay = a_randomParameters.x;
+    float sizeChangeSpeed = a_randomParameters.y;
+    float pointSize = a_pointSize + (sin(time * sizeChangeSpeed + sizeDelay) + 1.0);
+    gl_PointSize = pointSize;
   }
 `
 
@@ -38,35 +44,48 @@ const fragmentShaderPointsSrc = `#version 300 es
 `
 
 export default class PointCloud {
-  private _numPoints: number = 64
   private _pointsShader: Shader
   private _pointsShaderUniforms: IUniforms
   private _shaderProgramPoints: WebGLProgram
+  private _sizeX: number
+  private _sizeY: number
 
   // Point and line data
   private _pointTextureCoords: Float32Array
   private _pointTextureCoordsBuffer: WebGLBuffer | null
   private _pointSizes: Float32Array
   private _pointSizesBuffer: WebGLBuffer | null
+  private _randomParameters: Float32Array
+  private _randomParametersBuffer: WebGLBuffer | null
   
-  constructor() {
+  constructor(private _numPoints: number) {
+    this._sizeX = Math.ceil(Math.sqrt(_numPoints))
+    this._sizeY = Math.ceil(Math.sqrt(_numPoints))
+
     this._pointsShader = new Shader(vertexShaderPointsSrc, fragmentShaderPointsSrc)
     this._pointsShaderUniforms = {
       pointPositions: { type: UniformTypes.Texture2d, value: null },
+      time: { type: UniformTypes.Float, value: 0 },
     }
     this._pointsShader.uniforms = this._pointsShaderUniforms
     this._shaderProgramPoints = createProgram(gl, this._pointsShader)
 
     const pointTextureCoords: number[] = []
     const pointSizes: number[] = []
-    for (let x = 0; x < 8; x++) {
-      for (let y = 0; y < 8; y++) {
-        pointTextureCoords.push(x / 8.0), pointTextureCoords.push(y / 8.0)
-        pointSizes.push(Math.random() * 5.0 + 2.0)
+    const randomParameters: number[] = []
+    for (let x = 0; x < this._sizeX; x++) {
+      for (let y = 0; y < this._sizeY; y++) {
+        pointTextureCoords.push(x / this._sizeX), pointTextureCoords.push(y / this._sizeY)
+        pointSizes.push(Math.random() * 2.0 + 3.0)
+        
+        randomParameters.push(5.0 * (Math.random() - 0.5))
+        randomParameters.push(5.0 * (Math.random() - 0.5))
+        randomParameters.push(5.0 * (Math.random() - 0.5))
       }
     }
     this._pointTextureCoords = new Float32Array(pointTextureCoords)
     this._pointSizes = new Float32Array(pointSizes)
+    this._randomParameters = new Float32Array(randomParameters)
 
     this._pointTextureCoordsBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, this._pointTextureCoordsBuffer)
@@ -75,12 +94,18 @@ export default class PointCloud {
     this._pointSizesBuffer = gl.createBuffer()
     gl.bindBuffer(gl.ARRAY_BUFFER, this._pointSizesBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, this._pointSizes, gl.STATIC_DRAW)
+
+    this._randomParametersBuffer = gl.createBuffer()
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._randomParametersBuffer)
+    gl.bufferData(gl.ARRAY_BUFFER, this._randomParameters, gl.STATIC_DRAW)
   }
 
-  public render(pointPositions: WebGLTexture) {
+  public render(pointPositions: WebGLTexture, time: number) {
     gl.useProgram(this._shaderProgramPoints)
 
     this._pointsShaderUniforms.pointPositions.value = pointPositions
+    this._pointsShaderUniforms.time.value = time
+    this._pointsShader.update()
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this._pointTextureCoordsBuffer)
     const textureCoordsPoints = gl.getAttribLocation(this._shaderProgramPoints, 'a_textureCoords')
@@ -91,6 +116,11 @@ export default class PointCloud {
     const pointSizesLocation = gl.getAttribLocation(this._shaderProgramPoints, 'a_pointSize')
     gl.vertexAttribPointer(pointSizesLocation, 1, gl.FLOAT, false, 0, 0)
     gl.enableVertexAttribArray(pointSizesLocation)
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this._randomParametersBuffer)
+    const randomParametersLocation = gl.getAttribLocation(this._shaderProgramPoints, 'a_randomParameters')
+    gl.vertexAttribPointer(randomParametersLocation, 3, gl.FLOAT, false, 0, 0)
+    gl.enableVertexAttribArray(randomParametersLocation)
 
     // gl.enable(gl.DEPTH_TEST)
     gl.viewport(0, 0, window.innerWidth, window.innerHeight)

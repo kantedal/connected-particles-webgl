@@ -32,15 +32,9 @@ export default class Shader {
       if (uniformName) {   
         const uniform = this._uniforms[uniformName] as IUniform
         if (uniform) {
-          // if (uniformName === 'mousePos') {
-          //   console.log(uniformName, uniform.location)
-          // }
-          if (uniform.location != null) {
+          if (uniform.location != null) {         
             if (uniform.type === UniformTypes.Float) { gl.uniform1f(uniform.location, uniform.value) }
-            else if (uniform.type === UniformTypes.Vec2) { 
-              // console.log('vec2', uniform.value)
-              gl.uniform2fv(uniform.location, uniform.value) 
-            }
+            else if (uniform.type === UniformTypes.Vec2) { gl.uniform2fv(uniform.location, uniform.value) }
             else if (uniform.type === UniformTypes.Vec3) { gl.uniform3fv(uniform.location, uniform.value) }
             else if (uniform.type === UniformTypes.Integer) { gl.uniform1i(uniform.location, uniform.value) }
             else if (uniform.type === UniformTypes.Texture2d || uniform.type === UniformTypes.Texture3d) {

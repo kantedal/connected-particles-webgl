@@ -20,6 +20,10 @@ export default class PingPongComputeShader {
     this._shader.setUniform(id, data)
   }
 
+  public update() {
+    this._shader.update()
+  }
+
   set uniforms(value: {[p: string]: IUniform}) { this._shader.uniforms = value }
   get sizeX() { return this._sizeX }
   get sizeY() { return this._sizeY }

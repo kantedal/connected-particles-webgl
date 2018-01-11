@@ -48,10 +48,11 @@ const fragmentShaderLinesSrc = `#version 300 es
 `
 
 export default class LineNetwork {
-  private _numPoints: number = 64
   private _linesShader: Shader
   private _linesShaderUniforms: IUniforms  
   private _shaderProgramLines: WebGLProgram
+  private _sizeX: number
+  private _sizeY: number
 
   // Buffers
   private _texCoordsBuffer: WebGLBuffer | null
@@ -62,7 +63,10 @@ export default class LineNetwork {
   private _pairLineTextureCoords: Float32Array
   private _lineCount: number = 0
 
-  constructor() {
+  constructor(private _numPoints: number) {
+    this._sizeX = Math.ceil(Math.sqrt(_numPoints))
+    this._sizeY = Math.ceil(Math.sqrt(_numPoints))
+
     this._linesShader = new Shader(vertexShaderLinesSrc, fragmentShaderLinesSrc)
     this._linesShaderUniforms = {
       pointPositions: { type: UniformTypes.Texture2d, value: null },
@@ -70,16 +74,16 @@ export default class LineNetwork {
     this._linesShader.uniforms = this._linesShaderUniforms
     this._shaderProgramLines = createProgram(gl, this._linesShader) 
     
-    for (let i = 0; i < this._numPoints * 3; i += 3) {
-      for (let j = i + 3; j < this._numPoints * 3; j += 3) {
+    for (let i = 0; i < this._sizeX * this._sizeY; i++) {
+      for (let j = i + 1; j < this._sizeX * this._sizeY; j++) {
         this._lineCount += 2
       }
     }
 
     const texCoords: number[] = []
-    for (let x = 0; x < Math.sqrt(this._numPoints); x++) {
-      for (let y = 0; y < Math.sqrt(this._numPoints); y++) {
-        texCoords.push(x / Math.sqrt(this._numPoints)), texCoords.push(y / Math.sqrt(this._numPoints))
+    for (let x = 0; x < this._sizeX; x++) {
+      for (let y = 0; y < this._sizeY; y++) {
+        texCoords.push(x / this._sizeX), texCoords.push(y / this._sizeY)
       }
     }
 

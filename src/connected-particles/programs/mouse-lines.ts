@@ -54,10 +54,11 @@ const fragmentShaderLinesSrc = `#version 300 es
 `
 
 export default class MouseLines {
-  private _numPoints: number = 64
   private _linesShader: Shader
   private _linesShaderUniforms: IUniforms  
   private _shaderProgramLines: WebGLProgram
+  private _sizeX: number
+  private _sizeY: number
 
   // Buffers
   private _texCoordsBuffer: WebGLBuffer | null
@@ -66,12 +67,14 @@ export default class MouseLines {
   // Point and line data
   private _lineTextureCoords: Float32Array
   private _pointId: Float32Array
-  private _mousePosition: number[] = [0, 0]
 
-  constructor() {
+  constructor(private _numPoints: number) {
+    this._sizeX = Math.ceil(Math.sqrt(_numPoints))
+    this._sizeY = Math.ceil(Math.sqrt(_numPoints))
+
     this._linesShader = new Shader(vertexShaderLinesSrc, fragmentShaderLinesSrc)
     this._linesShaderUniforms = {
-      mousePosition: { type: UniformTypes.Vec2, value: [1.0, 0.5] },      
+      mousePosition: { type: UniformTypes.Vec2, value: [10, 10] },      
       pointPositions: { type: UniformTypes.Texture2d, value: null }
     }
     this._linesShader.uniforms = this._linesShaderUniforms
@@ -79,10 +82,10 @@ export default class MouseLines {
     
     const lineTextureCoords: number[] = []
     const pointId: number[] = []
-    for (let x = 0; x < Math.sqrt(this._numPoints); x++) {
-      for (let y = 0; y < Math.sqrt(this._numPoints); y++) {
-        lineTextureCoords.push(x / 8.0), lineTextureCoords.push(y / 8.0)
-        lineTextureCoords.push(x / 8.0), lineTextureCoords.push(y / 8.0)
+    for (let x = 0; x < this._sizeX; x++) {
+      for (let y = 0; y < this._sizeY; y++) {
+        lineTextureCoords.push(x / this._sizeX), lineTextureCoords.push(y / this._sizeY)
+        lineTextureCoords.push(x / this._sizeX), lineTextureCoords.push(y / this._sizeY)
         
         pointId.push(1), pointId.push(0)
         pointId.push(0), pointId.push(0)
@@ -91,20 +94,15 @@ export default class MouseLines {
     this._lineTextureCoords = new Float32Array(lineTextureCoords)
     this._pointId = new Float32Array(pointId)
 
-    document.onmousemove = (e) => {
-      this._mousePosition[0] = 2.0 * (e.clientX / window.innerWidth - 0.5)
-      this._mousePosition[1] = -2.0 * (e.clientY / window.innerHeight - 0.5)
-    }
-
     this._texCoordsBuffer = gl.createBuffer()
     this._pointIdBuffer = gl.createBuffer()
   }
 
-  public render(pointPositions: WebGLTexture) {
+  public render(pointPositions: WebGLTexture, mousePosition: number[]) {
     gl.useProgram(this._shaderProgramLines)
 
     this._linesShaderUniforms.pointPositions.value = pointPositions    
-    this._linesShaderUniforms.mousePosition.value = this._mousePosition
+    this._linesShaderUniforms.mousePosition.value = mousePosition
     this._linesShader.update()
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this._texCoordsBuffer)
