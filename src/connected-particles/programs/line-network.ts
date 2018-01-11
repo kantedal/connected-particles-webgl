@@ -81,7 +81,7 @@ export default class LineNetwork {
     }
 
     const texCoords: number[] = []
-    const texOffset = 1.0 / (this._sizeX * this._sizeY)
+    const texOffset = 1.0 / (this._sizeX * 2.0)
     for (let x = 0; x < this._sizeX; x++) {
       for (let y = 0; y < this._sizeY; y++) {
         texCoords.push(x / this._sizeX + texOffset), texCoords.push(y / this._sizeY + texOffset)

@@ -18,21 +18,13 @@ const pointPosComputeShader = `#version 300 es
   uniform vec2 mousePosition;
 
   void main() {
-    // vec4 seed = texture(seeds, v_texCoord);
-    // vec3 currentPos = texture(currentPosition, v_texCoord).xyz;
-    // vec3 force = texture(pointForce, v_texCoord).xyz;
+    vec4 seed = texture(seeds, v_texCoord);
 
-    // vec3 direction = force; vec3(0.0, 0.0, 0.0); // vec3(sin(time * seed.x + seed.y), cos(time * seed.z + seed.w), 0.0);
+    vec3 seedVelocity =  vec3(sin(time * seed.x + seed.y), cos(time * seed.z + seed.w), 0.0);
 
-    // float lim = 1.0;
-    // if (currentPos.x < -lim || currentPos.x > lim || currentPos.y < -lim|| currentPos.y > lim) {
-    //   float distanceFromCenter = length(currentPos);
-    //   direction = direction + normalize(-currentPos) * distanceFromCenter;
-    // }
-    
     vec3 currentPos = texture(currentPosition, v_texCoord).xyz;
     vec3 velocity = texture(pointVelocity, v_texCoord).xyz;
-    vec3 newPos = currentPos + 0.01 * velocity;
+    vec3 newPos = currentPos + 0.01 * velocity + 0.001 * seedVelocity;
     outColor = vec4(newPos, 1.0);
   }
 `
@@ -84,17 +76,12 @@ export default class PointPosCompute {
 
   private initializePositions(): WebGLTexture {
     const initPositions = []
-    // for (let i = 0; i < this._sizeX * this._sizeY; i++) {
-    //   initPositions.push(2.0 * (Math.random() - 0.5))
-    //   initPositions.push(2.0 * (Math.random() - 0.5))
-    //   initPositions.push(2.0 * (Math.random() - 0.5))
-    //   initPositions.push(0)
-    // }
-    initPositions.push(0.5, 0.5, 0.0, 1.0)
-    initPositions.push(-0.5, -0.5, 0.0, 1.0)
-    initPositions.push(0.5, -0.5, 0.0, 1.0)
-    initPositions.push(-0.5, 0.5, 0.0, 1.0)
-    console.log(new Float32Array(initPositions))
+    for (let i = 0; i < this._sizeX * this._sizeY; i++) {
+      initPositions.push(2.0 * (Math.random() - 0.5))
+      initPositions.push(2.0 * (Math.random() - 0.5))
+      initPositions.push(0.0)
+      initPositions.push(0.0)
+    }
 
     return new DataTexture(this._sizeX, this._sizeY, new Float32Array(initPositions)).texture
   }

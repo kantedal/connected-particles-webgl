@@ -17,7 +17,7 @@ export default class ConenctedParticles {
   private _mousePosition: number[]
 
   constructor() {
-    const numPoints = 4
+    const numPoints = 64
 
     this._pointVelComputeShader = new PointVelCompute(numPoints)    
     this._pointPosComputeShader = new PointPosCompute(numPoints)
@@ -34,17 +34,9 @@ export default class ConenctedParticles {
     }
 
     let time = 0.0
-    const maxIterations = 1
-    let iterations = 0
     const render = () => {
       this._pointVelComputeShader.compute(this._pointPosComputeShader.texture, time, this._mousePosition)
       this._pointPosComputeShader.compute(this._pointVelComputeShader.texture, time, this._mousePosition)
-
-      // for (let i = 0; i < numPoints * 4; i += 4) {
-      //   console.log('pos ' + i / 4, this._pointPosComputeShader.result[i], this._pointPosComputeShader.result[i + 1], this._pointPosComputeShader.result[i + 2], this._pointPosComputeShader.result[i + 3])
-      //   console.log('vel ' + i / 4, this._pointVelComputeShader.result[i], this._pointVelComputeShader.result[i + 1], this._pointVelComputeShader.result[i + 2], this._pointVelComputeShader.result[i + 3])
-      // }
-      // console.log('---------------')
 
       gl.clearColor(0.0, 0.0, 0.0, 0.0)      
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -58,18 +50,9 @@ export default class ConenctedParticles {
       this._pointCloud.render(this._pointPosComputeShader.texture, time)
 
       time += 0.01
-      // if (iterations < maxIterations) {
-        requestAnimationFrame(render)
-      //   iterations++
-      // }
+      requestAnimationFrame(render)
     }
       
     render()
-    // render()
-    // render()
-    // render()
-    // render()
-    // render()
-    // render()
   }
 }

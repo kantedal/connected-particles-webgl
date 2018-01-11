@@ -24,15 +24,15 @@ const pointForceComputeShader = `#version 300 es
 
   void main() {
     vec3 currentPos = texture(currentPosition, v_texCoord).xyz;
-    vec3 currentVel = texture(currentVelocity, v_texCoord).xyz * 0.95;
+    vec3 currentVel = texture(currentVelocity, v_texCoord).xyz * 0.975;
 
     float distanceToMouse = squaredDistance2d(currentPos.xy, mousePosition);
     float maxDistance = 0.1;
     vec3 awayFromMouse = normalize(vec3(currentPos.xy - mousePosition, 0.0));
-    vec3 force = 5.0 * max(maxDistance - distanceToMouse, 0.0) * awayFromMouse;
+    vec3 force = 2.0 * max(maxDistance - distanceToMouse, 0.0) * awayFromMouse;
 
-    float wallMargin = 0.1;
-    float wallForce = 5.0;
+    float wallMargin = 0.02;
+    float wallForce = 1.0;
     if (abs(currentPos.x) > 1.0 - wallMargin) {
       float distanceFromWall = (abs(currentPos.x) - (1.0 - wallMargin)) / wallMargin;
       force += wallForce * distanceFromWall * normalize(vec3(-currentPos.x, 0.0, 0.0));
