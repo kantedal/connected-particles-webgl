@@ -55,7 +55,6 @@ export default class FBO extends RenderTarget {
           internalFormat = gl.R32F
           type = gl.RED
           channels = 1
-          console.log('change texture format')
           break
         default:
           break

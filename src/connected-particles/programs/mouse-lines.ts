@@ -82,10 +82,11 @@ export default class MouseLines {
     
     const lineTextureCoords: number[] = []
     const pointId: number[] = []
+    const texOffset = 1.0 / (this._sizeX * this._sizeY)
     for (let x = 0; x < this._sizeX; x++) {
       for (let y = 0; y < this._sizeY; y++) {
-        lineTextureCoords.push(x / this._sizeX), lineTextureCoords.push(y / this._sizeY)
-        lineTextureCoords.push(x / this._sizeX), lineTextureCoords.push(y / this._sizeY)
+        lineTextureCoords.push(x / this._sizeX + texOffset), lineTextureCoords.push(y / this._sizeY + texOffset)
+        lineTextureCoords.push(x / this._sizeX + texOffset), lineTextureCoords.push(y / this._sizeY + texOffset)
         
         pointId.push(1), pointId.push(0)
         pointId.push(0), pointId.push(0)

@@ -20,7 +20,7 @@ const vertexShaderPointsSrc = `#version 300 es
     float sizeDelay = a_randomParameters.x;
     float sizeChangeSpeed = a_randomParameters.y;
     float pointSize = a_pointSize + (sin(time * sizeChangeSpeed + sizeDelay) + 1.0);
-    gl_PointSize = pointSize;
+    gl_PointSize = 10.0;
   }
 `
 
@@ -73,9 +73,10 @@ export default class PointCloud {
     const pointTextureCoords: number[] = []
     const pointSizes: number[] = []
     const randomParameters: number[] = []
+    const texOffset = 1.0 / (this._sizeX * this._sizeY)
     for (let x = 0; x < this._sizeX; x++) {
       for (let y = 0; y < this._sizeY; y++) {
-        pointTextureCoords.push(x / this._sizeX), pointTextureCoords.push(y / this._sizeY)
+        pointTextureCoords.push(x / this._sizeX + texOffset), pointTextureCoords.push(y / this._sizeY + texOffset)
         pointSizes.push(Math.random() * 2.0 + 3.0)
         
         randomParameters.push(5.0 * (Math.random() - 0.5))
@@ -83,6 +84,7 @@ export default class PointCloud {
         randomParameters.push(5.0 * (Math.random() - 0.5))
       }
     }
+
     this._pointTextureCoords = new Float32Array(pointTextureCoords)
     this._pointSizes = new Float32Array(pointSizes)
     this._randomParameters = new Float32Array(randomParameters)

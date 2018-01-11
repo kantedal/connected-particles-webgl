@@ -84,12 +84,18 @@ export default class PointPosCompute {
 
   private initializePositions(): WebGLTexture {
     const initPositions = []
-    for (let i = 0; i < this._sizeX * this._sizeY; i++) {
-      initPositions.push(2.0 * (Math.random() - 0.5))
-      initPositions.push(2.0 * (Math.random() - 0.5))
-      initPositions.push(2.0 * (Math.random() - 0.5))
-      initPositions.push(0)
-    }
+    // for (let i = 0; i < this._sizeX * this._sizeY; i++) {
+    //   initPositions.push(2.0 * (Math.random() - 0.5))
+    //   initPositions.push(2.0 * (Math.random() - 0.5))
+    //   initPositions.push(2.0 * (Math.random() - 0.5))
+    //   initPositions.push(0)
+    // }
+    initPositions.push(0.5, 0.5, 0.0, 1.0)
+    initPositions.push(-0.5, -0.5, 0.0, 1.0)
+    initPositions.push(0.5, -0.5, 0.0, 1.0)
+    initPositions.push(-0.5, 0.5, 0.0, 1.0)
+    console.log(new Float32Array(initPositions))
+
     return new DataTexture(this._sizeX, this._sizeY, new Float32Array(initPositions)).texture
   }
 

@@ -1,10 +1,9 @@
-import { gl } from '../utils/render-context'
-import { IUniforms, UniformTypes } from '../utils/shader'
-import PingPongComputeShader from '../utils/pingpong-compute-shader'
-import ComputeShader from '../utils/compute-shader'
-import DataTexture from '../utils/data-texture'
-
 // language=GLSL
+import DataTexture from '../utils/data-texture'
+import { IUniforms, UniformTypes } from '../utils/shader'
+import FBO from '../utils/fbo'
+import ComputeShader from '../utils/compute-shader';
+
 const pointForceComputeShader = `#version 300 es
   precision highp float;
 
@@ -12,7 +11,7 @@ const pointForceComputeShader = `#version 300 es
   out vec4 outColor;
   
   uniform sampler2D currentPosition;  
-  uniform sampler2D currentVelocity;
+  // uniform sampler2D currentVelocity;
   uniform float time;
   uniform vec2 mousePosition;
 
@@ -24,49 +23,57 @@ const pointForceComputeShader = `#version 300 es
 
   void main() {
     vec3 currentPos = texture(currentPosition, v_texCoord).xyz;
-    vec3 currentVel = texture(currentVelocity, v_texCoord).xyz * 0.95;
+    // vec3 currentVel = texture(currentVelocity, v_texCoord).xyz * 0.9;
 
-    float distanceToMouse = squaredDistance2d(currentPos.xy, mousePosition);
-    float maxDistance = 0.1;
-    vec3 awayFromMouse = normalize(vec3(currentPos.xy - mousePosition, 0.0));
-    vec3 force = 5.0 * max(maxDistance - distanceToMouse, 0.0) * awayFromMouse;
-
-    float wallMargin = 0.1;
-    float wallForce = 5.0;
-    if (abs(currentPos.x) > 1.0 - wallMargin) {
-      float distanceFromWall = (abs(currentPos.x) - (1.0 - wallMargin)) / wallMargin;
-      force += wallForce * distanceFromWall * normalize(vec3(-currentPos.x, 0.0, 0.0));
-    }
-
-    if (abs(currentPos.y) > 1.0 - wallMargin) {
-      float distanceFromWall = (abs(currentPos.y) - (1.0 - wallMargin)) / wallMargin;
-      force += wallForce * distanceFromWall * normalize(vec3(0.0, -currentPos.y, 0.0));
-    }
+    // float distanceToMouse = squaredDistance2d(currentPos.xy, mousePosition);
+    // float maxDistance = 0.1;
+    // vec3 awayFromMouse = normalize(vec3(currentPos.xy - mousePosition, 0.0));
+    // vec3 force = 500.0 * max(maxDistance - distanceToMouse, 0.0) * awayFromMouse;
     
-    outColor = vec4(currentVel + 0.1 * force, 1.0);
+    // outColor = vec4(currentVel + 0.1 * force, 1.0);
+    // vec3 currentPos = texture(currentPosition, v_texCoord).xyz;    
+    // float distanceToCenter = distance(currentPos.xy, vec2(0.0));
+    // if (distanceToCenter < 0.6) {
+    //   outColor = vec4(currentPos.xy, 0.0, 1.0);
+    // }
+    // else {
+    //   outColor = vec4(0.0, 0.0, 0.0, 1.0);
+    // }
+
+    // if (abs(currentPos.x) < 0.2 && abs(currentPos.y) < 0.2) {
+    //   outColor = vec4(currentVel.xy + 0.1 * currentPos.xy, 0.0, 1.0);      
+    // }
+    // else {
+    //   outColor = vec4(currentVel.xy, 0.0, 0.0);
+    // }
+    // if (abs(currentPos.x) < 0.96) {
+    //   outColor = vec4(currentVel.xy - 0.1 * vec2(1.0), 0.0, 1.0);         
+    //   return;
+    // }
+
+    outColor = vec4(0.0);
   }
 `
 
-export default class PointVelocityCompute {
+export default class Test {
   private _sizeX: number
   private _sizeY: number
-  private _computeShader: PingPongComputeShader
+  private _computeShader: ComputeShader
   private _computeShaderUniforms: IUniforms
 
   constructor(private _numPoints: number) {
     this._sizeX = Math.ceil(Math.sqrt(_numPoints))
     this._sizeY = Math.ceil(Math.sqrt(_numPoints))
-    this._computeShader = new PingPongComputeShader(pointForceComputeShader, this._sizeX, this._sizeY)
+    this._computeShader = new ComputeShader(pointForceComputeShader, this._sizeX, this._sizeY)
 
     const tempTex = new DataTexture(this._sizeX, this._sizeY, new Float32Array(this._sizeX * this._sizeY * 4))
     this._computeShaderUniforms = {
       mousePosition: { type: UniformTypes.Vec2, value: [10, 10]},
       time: { type: UniformTypes.Float, value: Math.PI },      
       currentPosition: { type: UniformTypes.Texture2d, value: tempTex.texture },            
-      currentVelocity: { type: UniformTypes.Texture2d, value: tempTex.texture },
     }
     this._computeShader.uniforms = this._computeShaderUniforms
-    // this._computeShaderUniforms.currentPosition.value = this.initializePositions()
+    this._computeShaderUniforms.currentPosition.value = this.initializePositions()
   }
 
   public compute(pointPositions: WebGLTexture | null, time: number, mousePosition: number[]) {
@@ -74,7 +81,6 @@ export default class PointVelocityCompute {
     this._computeShaderUniforms.currentPosition.value = pointPositions
     this._computeShaderUniforms.time.value = time
     this._computeShader.compute()
-    this._computeShaderUniforms.currentVelocity.value = this._computeShader.texture
   }
 
   private initializePositions(): WebGLTexture {

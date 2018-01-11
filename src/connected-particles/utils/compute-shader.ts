@@ -25,6 +25,7 @@ export default class ComputeShader {
   get sizeX() { return this._sizeX }
   get sizeY() { return this._sizeY }
   get result() { return this._fbo.textureData }
+  get texture() { return this._fbo.texture }
 }
 
 // language=GLSL
