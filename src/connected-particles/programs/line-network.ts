@@ -25,7 +25,7 @@ const vertexShaderLinesSrc = `#version 300 es
     vec3 pairPosition = texture(pointPositions, a_inversedTextureCoords).xyz;
     float distanceToPair = squaredDistance2d(position.xy, pairPosition.xy);
 
-    lineAlpha = max(0.05 - distanceToPair, 0.0);
+    lineAlpha = max(0.1 - distanceToPair, 0.0);
 
     gl_Position = vec4(position, 1.0);
   }

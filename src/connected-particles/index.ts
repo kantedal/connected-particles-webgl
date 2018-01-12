@@ -1,3 +1,4 @@
+import SpringMassCompute from './programs/sprint-mass-compute'
 import LineNetwork from './programs/line-network'
 import MouseLines from './programs/mouse-lines'
 import PointCloud from './programs/point-cloud'
@@ -5,10 +6,11 @@ import PointPosCompute from './programs/point-pos-compute'
 import { gl } from './utils/render-context'
 import Background from './programs/background'
 import PointVelCompute from './programs/point-vel-compute'
+import ClothCompute from './programs/cloth-compute'
 
 export default class ConenctedParticles {
-  private _pointPosComputeShader: PointPosCompute
-  private _pointVelComputeShader: PointVelCompute
+  private _pointSpringMassCompute: SpringMassCompute
+  private _pointClothCompute: ClothCompute
   private _background: Background
   private _pointCloud: PointCloud
   private _lineNetwork: LineNetwork
@@ -19,8 +21,8 @@ export default class ConenctedParticles {
   constructor() {
     const numPoints = 64
 
-    this._pointVelComputeShader = new PointVelCompute(numPoints)    
-    this._pointPosComputeShader = new PointPosCompute(numPoints)
+    this._pointSpringMassCompute = new SpringMassCompute(numPoints)    
+    this._pointClothCompute = new ClothCompute(numPoints)
   
     this._background = new Background()
     this._pointCloud = new PointCloud(numPoints)
@@ -35,9 +37,9 @@ export default class ConenctedParticles {
 
     let time = 0.0
     const render = () => {
-      this._pointVelComputeShader.compute(this._pointPosComputeShader.texture, time, this._mousePosition)
-      this._pointPosComputeShader.compute(this._pointVelComputeShader.texture, time, this._mousePosition)
-
+      this._pointSpringMassCompute.compute(this._pointClothCompute.texture, time, this._mousePosition)
+      this._pointClothCompute.compute(this._pointSpringMassCompute.texture, this._pointClothCompute.texture, time, this._mousePosition)     
+      
       gl.clearColor(0.0, 0.0, 0.0, 0.0)      
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
       gl.disable(gl.DEPTH_TEST)
@@ -45,9 +47,9 @@ export default class ConenctedParticles {
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
       this._background.render()
-      this._lineNetwork.render(this._pointPosComputeShader.texture)
-      this._mouseLines.render(this._pointPosComputeShader.texture, this._mousePosition)
-      this._pointCloud.render(this._pointPosComputeShader.texture, time)
+      this._lineNetwork.render(this._pointClothCompute.texture)
+      this._mouseLines.render(this._pointClothCompute.texture, this._mousePosition)
+      this._pointCloud.render(this._pointClothCompute.texture, time)
 
       time += 0.01
       requestAnimationFrame(render)
