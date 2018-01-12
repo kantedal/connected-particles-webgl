@@ -1,1 +1,1 @@
-WebGL2 experiment similar to particles.js
+WebGL2 experiment similar to particles.js (but much better ofc)

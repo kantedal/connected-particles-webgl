@@ -42,7 +42,7 @@ const pointForceComputeShader = `#version 300 es
             newPos += 0.05 * offset;
           }
 
-          if (distance < pointRadius + restingDistance && distance > restingDistance) {
+          if (distance < pointRadius + restingDistance && distance > restingDistance + 0.01) {
             vec3 offset = normalize(pointPosB - pointPosA) * (distance - restingDistance);
             newPos += 0.005 * offset;
           }

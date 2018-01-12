@@ -13,6 +13,7 @@ const clothComputeShader = `#version 300 es
   
   uniform sampler2D lastPosition;  
   uniform sampler2D currentPosition;  
+  uniform sampler2D seeds;
   uniform float time;
   uniform vec2 mousePosition;
   uniform vec2 inputSize;
@@ -25,15 +26,15 @@ const clothComputeShader = `#version 300 es
 
   vec3 calculateMouseForce(vec3 currentPos) {
     float distanceToMouse = sqrt(squaredDistance2d(currentPos.xy, mousePosition));
-    float maxDistance = 0.35;
+    float maxDistance = 0.3;
     vec3 awayFromMouse = normalize(vec3(currentPos.xy - mousePosition, 0.0));
-    return 200.0 * max(maxDistance - distanceToMouse, 0.0) * awayFromMouse;
+    return 150.0 * max(maxDistance - distanceToMouse, 0.0) * awayFromMouse;
   }
 
   vec3 calculateWallForce(vec3 currentPos) {
     vec3 force = vec3(0.0);
-    float wallMargin = 0.1;
-    float wallForce = 300.0;
+    float wallMargin = 0.05;
+    float wallForce = 200.0;
     if (abs(currentPos.x) > 1.0 - wallMargin) {
       float distanceFromWall = (abs(currentPos.x) - (1.0 - wallMargin)) / wallMargin;
       force += wallForce * distanceFromWall * normalize(vec3(-currentPos.x, 0.0, 0.0));
@@ -45,9 +46,21 @@ const clothComputeShader = `#version 300 es
     return force;
   }
 
+  vec3 vectorFieldForce(vec3 currentPos) {
+    vec3 fieldForce = vec3(0.0);
+    //fieldForce += 5.0 * vec3(-currentPos.y, currentPos.x, 0.0);
+    fieldForce += 0.1 * normalize(vec3(currentPos.x, currentPos.y, 0.0));
+    return fieldForce;
+  }
+
+  vec3 calculateSeedForce(vec3 currentPos) {
+    vec4 seed = texture(seeds, v_texCoord);
+    return 8.0 * vec3(sin(time * seed.x + seed.y), cos(time * seed.z + seed.w), 0.0);
+  }
+
   void main() {
     float delta = 0.02;
-    float damping = 0.2;
+    float damping = 0.05;
 
     vec3 currentPos = texture(currentPosition, v_texCoord).xyz;
     vec3 lastPos = texture(lastPosition, v_texCoord).xyz;
@@ -59,6 +72,9 @@ const clothComputeShader = `#version 300 es
 
     vec3 force = calculateMouseForce(currentPos);    
     force += calculateWallForce(currentPos);
+    // force += vectorFieldForce(currentPos);
+    force += calculateSeedForce(currentPos);
+
     vec3 velocity = currentPos - lastPos;
     currentPos += velocity * (1.0 - damping) + force * delta * delta;
     outColor = vec4(currentPos, 1.0);
@@ -82,7 +98,8 @@ export default class ClothCompute {
       mousePosition: { type: UniformTypes.Vec2, value: [10, 10]},
       time: { type: UniformTypes.Float, value: Math.PI },      
       lastPosition: { type: UniformTypes.Texture2d, value: tempTex.texture },      
-      currentPosition: { type: UniformTypes.Texture2d, value: tempTex.texture },      
+      currentPosition: { type: UniformTypes.Texture2d, value: tempTex.texture },
+      seeds: { type: UniformTypes.Texture2d, value: this.initializeSeeds() },      
     }
     this._computeShader.uniforms = this._computeShaderUniforms
   }
@@ -93,6 +110,17 @@ export default class ClothCompute {
     this._computeShaderUniforms.lastPosition.value = lastPositions
     this._computeShaderUniforms.time.value = time
     this._computeShader.compute()
+  }
+
+  private initializeSeeds(): WebGLTexture {
+    const initSeeds = []
+    for (let i = 0; i < this._sizeX * this._sizeY; i++) {
+      initSeeds.push(5.0 * (Math.random() - 0.5))
+      initSeeds.push(5.0 * (Math.random() - 0.5))
+      initSeeds.push(5.0 * (Math.random() - 0.5))
+      initSeeds.push(5.0 * (Math.random() - 0.5))
+    }
+    return new DataTexture(this._sizeX, this._sizeY, new Float32Array(initSeeds)).texture
   }
 
   get result() { return this._computeShader.result }
