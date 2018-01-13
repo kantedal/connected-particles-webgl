@@ -21,10 +21,12 @@ const fragBackgroundSrc = `#version 300 es
   in vec2 v_texCoord;
   out vec4 outColor;
 
+  uniform float time;
+
   void main() {
     vec3 clr1 = vec3(0.616, 0.314, 0.733);
     vec3 clr2 = vec3(0.431, 0.282, 0.667);
-    vec3 finalClr = mix(clr1, clr2, v_texCoord.y);
+    vec3 finalClr = mix(clr1, clr2, sin(5.0 * time) * v_texCoord.y);
     outColor = vec4(finalClr, 1.0);
   }
 `
@@ -41,7 +43,11 @@ export default class Background {
     this._renderTarget = new RenderTarget(this._shader, window.innerWidth, window.innerHeight)
   }
 
-  public render() { 
+  public render(time: number) { 
     this._renderTarget.render()
+  }
+
+  public resize(width: number, height: number) {
+    this._renderTarget.setWindowSize(width, height)
   }
 }

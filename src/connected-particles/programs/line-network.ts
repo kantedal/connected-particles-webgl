@@ -11,6 +11,7 @@ const vertexShaderLinesSrc = `#version 300 es
   in vec2 a_inversedTextureCoords;
 
   uniform sampler2D pointPositions;
+  uniform vec2 screenProportions;
 
   out float lineAlpha;
 
@@ -21,13 +22,13 @@ const vertexShaderLinesSrc = `#version 300 es
   }
 
   void main() {
-    vec3 position = texture(pointPositions, a_textureCoords).xyz;
-    vec3 pairPosition = texture(pointPositions, a_inversedTextureCoords).xyz;
-    float distanceToPair = squaredDistance2d(position.xy, pairPosition.xy);
+    vec2 position = texture(pointPositions, a_textureCoords).xy * screenProportions;
+    vec2 pairPosition = texture(pointPositions, a_inversedTextureCoords).xy * screenProportions;
+    float distanceToPair = squaredDistance2d(position, pairPosition);
 
     lineAlpha = max(0.1 - distanceToPair, 0.0);
 
-    gl_Position = vec4(position, 1.0);
+    gl_Position = vec4(position / screenProportions, 0.0, 1.0);
   }
 `
 
@@ -70,8 +71,10 @@ export default class LineNetwork {
     this._linesShader = new Shader(vertexShaderLinesSrc, fragmentShaderLinesSrc)
     this._linesShaderUniforms = {
       pointPositions: { type: UniformTypes.Texture2d, value: null },
+      screenProportions: { type: UniformTypes.Vec2, value: [1.0, 1.0] },
     }
     this._linesShader.uniforms = this._linesShaderUniforms
+    this._linesShader.update()
     this._shaderProgramLines = createProgram(gl, this._linesShader) 
     
     for (let i = 0; i < this._sizeX * this._sizeY; i++) {
@@ -110,6 +113,8 @@ export default class LineNetwork {
     gl.useProgram(this._shaderProgramLines)
 
     this._linesShader.setUniform('pointPositions', { type: UniformTypes.Texture2d, value: pointPositions })
+    // this._linesShader.setUniform('screenProportions', { type: UniformTypes.Vec2, value: [1.0, 1.0] })
+    this._linesShader.update()
 
     gl.bindBuffer(gl.ARRAY_BUFFER, this._texCoordsBuffer)
     gl.bufferData(gl.ARRAY_BUFFER, this._lineTextureCoords, gl.STATIC_DRAW)
@@ -126,5 +131,9 @@ export default class LineNetwork {
     // gl.enable(gl.DEPTH_TEST)
     gl.viewport(0, 0, window.innerWidth, window.innerHeight)
     gl.drawArrays(gl.LINES, 0, this._lineCount)
+  }
+
+  public setProportions(width: number, height: number) {
+    this._linesShaderUniforms.screenProportions.value = [width, height]
   }
 }

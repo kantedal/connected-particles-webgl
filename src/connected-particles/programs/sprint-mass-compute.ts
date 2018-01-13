@@ -13,44 +13,37 @@ const pointForceComputeShader = `#version 300 es
   
   uniform sampler2D lastPosition;  
   uniform float time;
+  uniform vec2 screenProportions;
   uniform vec2 mousePosition;
   uniform vec2 inputSize;
-
-  float squaredDistance2d(vec2 p0, vec2 p1) {
-    float dx = p1.x - p0.x;
-    float dy = p1.y - p0.y;
-    return dx * dx + dy * dy;
-  }
 
   void main() {
     float restingDistance = 0.2;
     float pointRadius = 0.15;
-    float maxConnections = 4.0;
-    float connections = 0.0;
 
-    vec3 pointPosA = texture(lastPosition, v_texCoord).xyz;
-    vec3 newPos = pointPosA;
+    vec2 pointPosA = texture(lastPosition, v_texCoord).xy * screenProportions;
+    vec2 newPos = pointPosA;
     
     for (int x = 0; x < int(inputSize.x); x++) {
       for (int y = 0; y < int(inputSize.y); y++) {
-        vec3 pointPosB = texelFetch(lastPosition, ivec2(x, y), 0).xyz;
+        vec2 pointPosB = texelFetch(lastPosition, ivec2(x, y), 0).xy * screenProportions;
         if (pointPosA.x != pointPosB.x && pointPosA.y != pointPosB.y) {
-          float distance = sqrt(squaredDistance2d(pointPosA.xy, pointPosB.xy));
+          float distance = distance(pointPosA, pointPosB);
 
           if (distance < restingDistance) {
-            vec3 offset = normalize(pointPosB - pointPosA) * (distance - restingDistance);
+            vec2 offset = normalize(pointPosB - pointPosA) * (distance - restingDistance);
             newPos += 0.05 * offset;
           }
 
-          if (distance < pointRadius + restingDistance && distance > restingDistance + 0.01) {
-            vec3 offset = normalize(pointPosB - pointPosA) * (distance - restingDistance);
+          if (distance < pointRadius + restingDistance && distance > restingDistance + 0.005) {
+            vec2 offset = normalize(pointPosB - pointPosA) * (distance - restingDistance);
             newPos += 0.005 * offset;
           }
         }
       }
     }
 
-    outColor = vec4(newPos, 1.0);
+    outColor = vec4(newPos / screenProportions, 0.0, 1.0);
   }
 `
 
@@ -69,6 +62,7 @@ export default class SpringMassCompute {
     const tempTex = new DataTexture(this._sizeX, this._sizeY, new Float32Array(this._sizeX * this._sizeY * 4))
     this._computeShaderUniforms = {
       inputSize: { type: UniformTypes.Vec2, value: [this._sizeX, this._sizeY] },
+      screenProportions: { type: UniformTypes.Vec2, value: [1.0, 1.0] },
       mousePosition: { type: UniformTypes.Vec2, value: [10, 10]},
       time: { type: UniformTypes.Float, value: Math.PI },      
       lastPosition: { type: UniformTypes.Texture2d, value: tempTex.texture },      
@@ -84,6 +78,10 @@ export default class SpringMassCompute {
     this._computeShaderUniforms.mousePosition.value = mousePosition    
     this._computeShaderUniforms.time.value = time
     this._computeShader.compute()
+  }
+
+  public setProportions(width: number, height: number) {
+    this._computeShaderUniforms.screenProportions.value = [width, height]
   }
 
   private initializePositions(): WebGLTexture {

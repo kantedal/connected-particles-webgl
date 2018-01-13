@@ -1,12 +1,10 @@
-import SpringMassCompute from './programs/sprint-mass-compute'
+import Background from './programs/background'
+import ClothCompute from './programs/cloth-compute'
 import LineNetwork from './programs/line-network'
 import MouseLines from './programs/mouse-lines'
 import PointCloud from './programs/point-cloud'
-import PointPosCompute from './programs/point-pos-compute'
-import { gl } from './utils/render-context'
-import Background from './programs/background'
-import PointVelCompute from './programs/point-vel-compute'
-import ClothCompute from './programs/cloth-compute'
+import SpringMassCompute from './programs/sprint-mass-compute'
+import { gl, initRenderContext } from './utils/render-context'
 
 export default class ConenctedParticles {
   private _pointSpringMassCompute: SpringMassCompute
@@ -18,8 +16,8 @@ export default class ConenctedParticles {
 
   private _mousePosition: number[]
 
-  constructor() {
-    const numPoints = 64
+  constructor(private _canvasElement: HTMLCanvasElement, numPoints: number) {
+    initRenderContext(_canvasElement)
 
     this._pointSpringMassCompute = new SpringMassCompute(numPoints)    
     this._pointClothCompute = new ClothCompute(numPoints)
@@ -35,6 +33,8 @@ export default class ConenctedParticles {
       this._mousePosition[1] = -2.0 * (e.clientY / window.innerHeight - 0.5)
     }
 
+    this.resize(this._canvasElement.width, this._canvasElement.height)
+
     let time = 0.0
     const render = () => {
       this._pointSpringMassCompute.compute(this._pointClothCompute.texture, time, this._mousePosition)
@@ -46,7 +46,7 @@ export default class ConenctedParticles {
       gl.enable(gl.BLEND)
       gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
-      this._background.render()
+      this._background.render(time)
       this._lineNetwork.render(this._pointClothCompute.texture)
       this._mouseLines.render(this._pointClothCompute.texture, this._mousePosition)
       this._pointCloud.render(this._pointClothCompute.texture, time)
@@ -56,5 +56,18 @@ export default class ConenctedParticles {
     }
       
     render()
+  }
+
+  public resize(width: number, height: number) {
+    this._canvasElement.width = width
+    this._canvasElement.height = height
+    
+    const widthProportions = width / height
+    // this._pointSpringMassCompute.setProportions(widthProportions, 1.0)
+    // this._pointClothCompute.setProportions(widthProportions, 1.0)
+    this._lineNetwork.setProportions(widthProportions, 1.0)
+
+    this._background.resize(width, height)
+    console.log(width / height)
   }
 }
