@@ -1,6 +1,6 @@
 WebGL2 experiment similar to particles.js. Particles are simulated on the GPU using Verlet integration.
 
-![alt tag](https://raw.githubusercontent.com/kantedal/pathtracer-webgl2/master/connected-points.gif)
+<img src="https://raw.githubusercontent.com/kantedal/connected-particles-webgl/master/connected-points.gif" width="500">
 
 Run:
 ```bash
