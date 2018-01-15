@@ -68,6 +68,5 @@ export default class ConenctedParticles {
     this._lineNetwork.setProportions(widthProportions, 1.0)
 
     this._background.resize(width, height)
-    console.log(width / height)
   }
 }

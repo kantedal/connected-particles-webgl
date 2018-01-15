@@ -14,7 +14,7 @@ class App extends React.Component {
 
   componentDidMount() {
     const canvas: HTMLCanvasElement = document.getElementById('canvas') as HTMLCanvasElement
-    const connectedParticles = new ConnectedParticles(canvas, 64)
+    const connectedParticles = new ConnectedParticles(canvas, 100)
 
     window.addEventListener('resize', (e: any) => {
       console.log(e.srcElement.innerWidth, e.srcElement.innerHeight)
